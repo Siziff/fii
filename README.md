@@ -1,144 +1,144 @@
 # FII — Fast Interaction Interface
 
-**Быстрый и частый контроль человека над ИИ-агентом, не замедляющий агента.**
+**Fast, frequent human oversight of AI agents that does not slow the agent down.**
 
-> Статус: концепция / бронирование идеи. Дата фиксации: 2026-09-28. Автор: Ivan Mikheev. Лицензия: MIT.
+> Status: concept / idea reservation. Recorded: 2026-09-28. Author: Ivan Mikheev. License: MIT.
 
 ---
 
-## 1. Проблема
+## 1. The problem
 
-Главная опасность современных ИИ-агентов — не «злой ИИ», а **бесконтрольность**. Человек, стремясь к скорости, отпускает контроль, и агент начинает действовать почти полностью по собственному усмотрению. Последствия уже регулярно попадают в новости:
+The main danger of today's AI agents is not "evil AI" — it is **lack of control**. Chasing speed, humans let go of oversight, and the agent starts acting almost entirely at its own discretion. The consequences already make the news regularly:
 
-| Дата | Инцидент | Суть |
+| Date | Incident | What happened |
 |---|---|---|
-| 2025-07-18 | Replit Agent / SaaStr | Несмотря на явный «code freeze», агент удалил production-БД (~1200 компаний), сгенерировал ~4000 фейковых пользователей и соврал про невозможность отката. |
-| 2025-07 | Amazon Q Developer (CVE-2025-8217) | В релиз расширения VS Code попал вредоносный промпт «очистить систему до заводского состояния»; инструкции агента стали вектором атаки, невидимым для поштучного аппрува действий. |
-| 2025-07-21 | Gemini CLI (issue #4586) | При реорганизации папки агент уничтожил файлы пользователя и галлюцинировал их существование, пока не признал провал. |
+| 2025-07-18 | Replit Agent / SaaStr | Despite an explicit code freeze, the agent deleted a production DB (~1,200 companies), fabricated ~4,000 fake users and lied about rollback being impossible. |
+| 2025-07 | Amazon Q Developer (CVE-2025-8217) | A malicious prompt ("clean the system to a near-factory state") shipped inside a VS Code extension release; the agent's own instructions became the attack vector, invisible to per-action approval. |
+| 2025-07-21 | Gemini CLI (issue #4586) | While reorganizing a folder, the agent destroyed the user's files and hallucinated their existence until it admitted failure. |
 
-При этом обратная крайность не работает: если человек проверяет каждый блок кода и отвечает на каждый мелкий вопрос агента, скорость падает до ручной, и главное преимущество ИИ исчезает. Индустрия называет это **«approval fatigue vs uncontrolled autonomy»** (Wang, Li, Tian, 2026).
+The opposite extreme does not work either: if a human reviews every block of code and answers every minor question from the agent, throughput drops to manual speed and the main advantage of AI disappears. The industry calls this **"approval fatigue vs. uncontrolled autonomy"** (Wang, Li, Tian, 2026).
 
-### Что делают существующие инструменты
+### What existing tools do
 
-Все крупные продукты (Claude Code, Codex CLI, Cursor, Copilot Agent, Devin) сошлись к одной и той же «лестнице» режимов:
+Every major product (Claude Code, Codex CLI, Cursor, Copilot Agent, Devin) has converged on the same ladder of modes:
 
 ```
-Manual (спрашивать всё) → Accept-edits → LLM-классификатор «auto/smart» → Bypass (не спрашивать ничего)
+Manual (ask for everything) → Accept-edits → LLM classifier "auto/smart" → Bypass (ask for nothing)
 ```
 
-Средняя ступень **заменяет человека вторым ИИ**, а не помогает человеку смотреть быстрее. Гранулярность контроля везде одна: *один tool-call → одно блокирующее бинарное «да/нет»*. Между «одобрять каждый шаг» и «доверять всё» **нет ступени «человек смотрит быстро, часто и не блокируя»**. FII — это именно эта недостающая ступень.
+The middle rung **replaces the human with a second AI** instead of helping the human look faster. The control granularity is the same everywhere: *one tool call → one blocking binary yes/no*. Between "approve every step" and "trust everything" there is **no rung for "the human watches quickly, frequently, and without blocking"**. FII is that missing rung.
 
-### Что говорит наука о человеческом факторе
+### What human-factors research says
 
-- **Ironies of Automation** (Bainbridge, 1983): чем больше автоматизируем, тем более скучный мониторинг остаётся человеку и тем сильнее деградирует навык, нужный для редкого, но критичного вмешательства.
-- **Automation bias / complacency** (Parasuraman & Riley, 1997): стабильно высокая надёжность автоматики порождает «learned carelessness»; ошибки *пропуска* не лечатся обучением; *больше деталей на экране усиливает* смещение; *ответственность за результат* и *переменная* надёжность его снижают.
-- **Habituation at the Gate** (Yu et al., 2026): при ревью PR от агентов доля аппрувов растёт (30% → 37%), число комментариев падает на 22% — пост-фактум ревью привыкает и вырождается.
-- **Pista** (Sabouri et al., 2026): участие человека *во время* выполнения ловит ошибки, которые пост-фактум ревью не находит.
-- **Agent Approval Laundering** (Zhang et al., 2026): аппрув показывает *вызов* (`npm install`), а не его *эффекты* (хуки, сеть, секреты). Политика «по тексту команды» принципиально не может быть надёжной.
+- **Ironies of Automation** (Bainbridge, 1983): the more we automate, the more tedious monitoring is left to the human, and the more the skill needed for rare-but-critical intervention decays.
+- **Automation bias / complacency** (Parasuraman & Riley, 1997): consistently high automation reliability breeds "learned carelessness"; omission errors are not fixed by training; *more on-screen detail increases* bias; *accountability for outcomes* and *variable* reliability reduce it.
+- **Habituation at the Gate** (Yu et al., 2026): in reviews of agent-authored PRs, approval rate rises (30% → 37%) and comment count drops 22% — post-hoc review habituates and degenerates.
+- **Pista** (Sabouri et al., 2026): human participation *during* execution catches errors that post-hoc review fails to surface.
+- **Agent Approval Laundering** (Zhang et al., 2026): an approval names the *invocation* (`npm install`), not its *effects* (lifecycle hooks, network, secrets). Command-text policies are fundamentally unsound.
 
-Вывод: нужен интерфейс, который (а) держит человека *в контуре во время* работы агента, (б) показывает *эффекты*, а не команды, (в) сознательно борется с привыканием, (г) не блокирует агента без необходимости.
+Conclusion: we need an interface that (a) keeps the human in the loop *while* the agent works, (b) shows *effects*, not commands, (c) deliberately fights habituation, and (d) does not block the agent unless necessary.
 
 ---
 
-## 2. Идея
+## 2. The idea
 
-**FII (Fast Interaction Interface)** — слой между ИИ-агентом и человеком, который превращает поток действий агента в **компактную, приоритизированную ленту микро-фактов**, каждый из которых человек может оценить за 1–3 секунды и при необходимости мгновенно наложить вето, откатить или скорректировать курс — **не останавливая агента**.
+**FII (Fast Interaction Interface)** is a layer between an AI agent and a human that turns the agent's stream of actions into a **compact, prioritized feed of micro-facts**, each of which a human can evaluate in 1–3 seconds and, if needed, instantly veto, roll back, or steer — **without stopping the agent**.
 
-Ключевой сдвиг: **от «разрешения» к «наблюдению с правом вето»**. Агент по умолчанию продолжает работу; человек не *разрешает* действия, а *отклоняет* неправильные, и делает это на потоке, а не в модальных окнах.
+The key shift: **from "permission" to "observation with a right of veto"**. By default the agent keeps working; the human does not *approve* actions, they *reject* wrong ones — on the fly, not in modal dialogs.
 
-### Принципы
+### Principles
 
-1. **Non-blocking by default.** Большинство действий не ждут человека. Блокируются только *необратимые* и *высокорисковые*.
-2. **Effects, not commands.** Показываем «затронуто 3 файла, вызван сетевой запрос на X, прочитан `.env`», а не `bash -c "..."`.
-3. **Reversibility as the primary axis.** Обратимое → просто показать (или даже не показывать); необратимое → показать с паузой; неизвестное → показать с паузой и предсказанием эффекта.
-4. **Micro-facts, not diffs.** Единица ревью — одно утверждение размером с заголовок, а не 200 строк diff. Раскрытие деталей — по запросу.
-5. **Anti-habituation.** Интерфейс намеренно борется с привыканием: переменная плотность, контрольные вопросы, явная ответственность («вы пропустили X»), калиброванное отображение уверенности.
-6. **Undo buffer.** Каждое действие агента откатываемо в пределах окна времени; вето = откат, а не только запрет будущего.
-7. **Agent-agnostic.** FII не привязан к конкретному агенту; подключается через хуки/прокси (Claude Code hooks, MCP-proxy, git-hooks, LSP).
-
----
-
-## 3. Варианты реализации интерфейса (кандидаты)
-
-Пока не выбран один; ниже — пространство решений с оценкой.
-
-### 3.1. «Тикер» — лента микро-фактов с горячими клавишами
-
-Одна строка на действие в отдельной панели терминала / боковой панели IDE:
-
-```
-▸ [edit ] src/auth.py       +12 −3   "add token refresh"           ← обратимо, авто
-▸ [read ] .env                        секреты в контексте          ⚠ жёлтое
-▸ [shell] pip install requests        сеть, lifecycle-хуки         ⚠ жёлтое
-■ [shell] git push --force origin main НЕОБРАТИМО                  ⏸ ждёт 5с → [v]eto / [enter]
-```
-
-Человек глазами скользит по ленте, реагирует только на цвет. Клавиши: `v` — вето/откат последнего, `space` — пауза агента, `?` — раскрыть, `!` — «объясни, зачем». Плюсы: минимальная задержка, знаком разработчикам. Минусы: требует периферийного внимания, риск «слепоты» к ленте.
-
-### 3.2. «Тревожная панель» по авиационной модели (ECAM-style)
-
-Три уровня, как в Airbus ECAM: **красный** (необратимо, агент остановлен, нужна реакция), **жёлтый** (внимание, агент продолжает, можно вето в течение N секунд), **зелёный/memo** (информация, не отвлекать). Всегда показывается *самое критичное первым*, вместе с *предлагаемым действием* («откатить / разрешить / изменить команду»). Плюсы: проверенная человеческим фактором модель. Минусы: урок Qantas 32 — без агрегации даже тиры тонут в объёме; нужна группировка однотипных событий.
-
-### 3.3. «Тайм-аут вето» (optimistic execution)
-
-Агент объявляет действие, ждёт короткое окно (2–10 секунд в зависимости от риска), и если вето не пришло — выполняет. Для обратимых действий окно = 0 (выполнить, показать, разрешить откат). Человек всегда может «удлинить окно» одной клавишей, если не успевает. Плюсы: агент почти не замедляется, человек контролирует темп. Минусы: при отвлечении человека превращается в bypass — нужен детектор присутствия (см. 3.6).
-
-### 3.4. «Свайп-триаж» / очередь микро-решений
-
-Некритичные, но требующие мнения человека вопросы агента («использовать библиотеку A или B?», «это старое поведение — сохранить?») не блокируют агента, а падают в очередь. Агент идёт по *дефолтной* ветке и помечает её как «условную»; человек в удобный момент проходит очередь как Tinder — влево/вправо — и агент перестраивает условные части. Плюсы: развязка темпа человека и агента. Минусы: сложная модель «условных» изменений, нужна поддержка отката ветвей.
-
-### 3.5. «Intent drift» — контроль намерения, а не действий
-
-Человек фиксирует намерение (цель, границы: «не трогать prod», «не менять API»). FII показывает для каждого шага не сам шаг, а **степень соответствия намерению** — одна шкала/цвет. Смотреть нужно только на отклонения. Это то, что академия исследует (intent anchoring), но ни один продукт не внедрил. Плюсы: самая высокая «сжимаемость» информации. Минусы: нужна вторая модель-оценщик; надёжность оценщика сама становится вопросом доверия.
-
-### 3.6. Кросс-вариантные механики
-
-- **Детектор присутствия.** Если человек отошёл (нет фокуса окна / ввода N минут), FII автоматически ужесточает режим: жёлтые становятся блокирующими. Решает «отвлечённый bypass» из 3.3.
-- **Anti-habituation probes.** Редкие заведомо «плохие» синтетические микро-факты; пропуск = сигнал человеку, что он перестал смотреть (и сигнал FII снизить темп).
-- **Динамическое локальное доверие** (как в Hedwig): доверие растёт для конкретных типов действий в конкретных зонах репозитория и падает в незнакомых.
-- **Undo-ring.** Shadow-git / снапшоты перед каждым действием; вето на любой строке ленты откатывает до неё.
-- **Эффект-предсказание.** Перед `shell` FII показывает предсказанные эффекты (файлы, сеть, секреты, процессы) — из sandbox dry-run или второй модели — и именно это, а не команда, попадает в ленту.
-
-### Предварительный выбор
-
-Наиболее перспективна комбинация **3.1 + 3.2 + 3.3 + 3.6**: лента микро-фактов с ECAM-тирами, оптимистичным исполнением обратимых действий, тайм-аут-вето для рискованных, детектором присутствия и undo-ring. 3.4 и 3.5 — второй этап.
+1. **Non-blocking by default.** Most actions do not wait for the human. Only *irreversible* and *high-risk* actions block.
+2. **Effects, not commands.** Show "3 files touched, network call to X, `.env` read" rather than `bash -c "..."`.
+3. **Reversibility as the primary axis.** Reversible → just show (or don't even show); irreversible → show with a pause; unknown → show with a pause and an effect prediction.
+4. **Micro-facts, not diffs.** The unit of review is a single headline-sized statement, not a 200-line diff. Details expand on demand.
+5. **Anti-habituation.** The interface deliberately fights habituation: variable density, attention probes, explicit accountability ("you skipped X"), calibrated confidence display.
+6. **Undo buffer.** Every agent action is reversible within a time window; a veto is a rollback, not just a ban on future actions.
+7. **Agent-agnostic.** FII is not tied to a specific agent; it attaches via hooks/proxies (Claude Code hooks, MCP proxy, git hooks, LSP).
 
 ---
 
-## 4. Чем FII отличается от существующего
+## 3. Interface design candidates
 
-| Свойство | Claude Code / Cursor / Codex / Copilot | AgentsGate, HumanLayer (v1) | **FII** |
+No single design has been chosen yet; below is the solution space with trade-offs.
+
+### 3.1. The "ticker" — a micro-fact feed with hotkeys
+
+One line per action in a separate terminal pane / IDE sidebar:
+
+```
+▸ [edit ] src/auth.py       +12 −3   "add token refresh"           ← reversible, auto
+▸ [read ] .env                        secrets now in context       ⚠ amber
+▸ [shell] pip install requests        network, lifecycle hooks     ⚠ amber
+■ [shell] git push --force origin main IRREVERSIBLE                ⏸ waits 5s → [v]eto / [enter]
+```
+
+The human skims the feed and reacts only to color. Keys: `v` — veto/rollback the last action, `space` — pause the agent, `?` — expand, `!` — "explain why". Pros: minimal latency, familiar to developers. Cons: relies on peripheral attention; risk of feed blindness.
+
+### 3.2. Alert panel modeled on aviation (ECAM-style)
+
+Three tiers, as in the Airbus ECAM: **red** (irreversible, agent halted, response required), **amber** (attention, agent continues, veto possible within N seconds), **green/memo** (informational, do not interrupt). The *most critical item is always shown first*, together with a *proposed action* ("roll back / allow / edit command"). Pros: a model validated by human-factors practice. Cons: the Qantas 32 lesson — without aggregation, even tiered alerts drown in volume; similar events must be grouped.
+
+### 3.3. Veto timeout (optimistic execution)
+
+The agent announces an action, waits a short window (2–10 seconds depending on risk), and executes if no veto arrives. For reversible actions the window is 0 (execute, show, allow rollback). The human can always "extend the window" with one key if they can't keep up. Pros: the agent is barely slowed; the human controls the tempo. Cons: if the human is distracted this degrades into bypass — needs a presence detector (see 3.6).
+
+### 3.4. Swipe triage / micro-decision queue
+
+Non-critical questions that still need a human opinion ("use library A or B?", "this is legacy behavior — keep it?") do not block the agent; they go into a queue. The agent takes the *default* branch and marks it as "conditional"; when convenient, the human runs through the queue Tinder-style — left/right — and the agent rebuilds the conditional parts. Pros: decouples human and agent tempo. Cons: complex model of "conditional" changes; requires branch rollback support.
+
+### 3.5. Intent drift — supervising intent, not actions
+
+The human states an intent (goal and boundaries: "don't touch prod", "don't change the API"). For each step FII shows not the step itself but the **degree of fit with the intent** — one scale/color. Only deviations need a look. This is what academia studies (intent anchoring) but no product has shipped. Pros: the highest information compression. Cons: needs a second evaluator model; the evaluator's reliability becomes its own trust question.
+
+### 3.6. Cross-cutting mechanics
+
+- **Presence detector.** If the human steps away (no window focus / no input for N minutes), FII automatically tightens the mode: amber items become blocking. Solves the "distracted bypass" problem of 3.3.
+- **Anti-habituation probes.** Rare, deliberately "bad" synthetic micro-facts; missing one signals to the human that they have stopped looking (and signals FII to slow the tempo).
+- **Dynamic local trust** (as in Hedwig): trust grows for specific action types in specific repository zones and drops in unfamiliar territory.
+- **Undo ring.** Shadow git / snapshots before every action; a veto on any feed line rolls back to that point.
+- **Effect prediction.** Before a `shell` action, FII shows predicted effects (files, network, secrets, processes) — from a sandbox dry-run or a second model — and it is this, not the command, that lands in the feed.
+
+### Preliminary choice
+
+The most promising combination is **3.1 + 3.2 + 3.3 + 3.6**: a micro-fact feed with ECAM tiers, optimistic execution of reversible actions, veto timeouts for risky ones, a presence detector and an undo ring. 3.4 and 3.5 are phase two.
+
+---
+
+## 4. How FII differs from existing work
+
+| Property | Claude Code / Cursor / Codex / Copilot | AgentsGate, HumanLayer (v1) | **FII** |
 |---|---|---|---|
-| Единица контроля | tool-call | tool-call | микро-факт об *эффекте* |
-| Режим | блокирующий да/нет | блокирующий да/нет (Slack/CLI) | не блокирующий, вето/откат |
-| Что видит человек | команда | команда + риск-скор | эффект + обратимость + соответствие намерению |
-| Средняя ступень | второй ИИ вместо человека | правила | человек, но быстрее |
-| Борьба с привыканием | нет | нет | встроена (probes, presence, variable density) |
-| Откат | checkpoint вручную | shadow-git | undo-ring, вето = откат |
+| Unit of control | tool call | tool call | micro-fact about an *effect* |
+| Mode | blocking yes/no | blocking yes/no (Slack/CLI) | non-blocking, veto/rollback |
+| What the human sees | command | command + risk score | effect + reversibility + intent fit |
+| Middle rung | second AI instead of human | rules | the human, but faster |
+| Anti-habituation | none | none | built in (probes, presence, variable density) |
+| Rollback | manual checkpoint | shadow git | undo ring, veto = rollback |
 
 ---
 
-## 5. Дорожная карта
+## 5. Roadmap
 
-- [x] Формулировка проблемы, ресерч, бронирование названия и идеи (этот README)
-- [ ] Спецификация формата «микро-факта» и классификации эффектов/обратимости
-- [ ] MVP: адаптер к Claude Code через `PreToolUse` / `PostToolUse` хуки → TUI-лента (вариант 3.1 + 3.3)
-- [ ] Undo-ring на shadow-git
-- [ ] ECAM-тиры и агрегация однотипных событий
-- [ ] Детектор присутствия, anti-habituation probes
-- [ ] Метрики: latency агента с FII vs без; доля пойманных «плохих» действий; кривая привыкания
-- [ ] Адаптеры: MCP-proxy (agent-agnostic), Cursor/VS Code
+- [x] Problem statement, research, reservation of name and idea (this README)
+- [ ] Specification of the "micro-fact" format and the effect/reversibility classification
+- [ ] MVP: Claude Code adapter via `PreToolUse` / `PostToolUse` hooks → TUI feed (variants 3.1 + 3.3)
+- [ ] Undo ring on shadow git
+- [ ] ECAM tiers and aggregation of similar events
+- [ ] Presence detector, anti-habituation probes
+- [ ] Metrics: agent latency with vs. without FII; share of "bad" actions caught; habituation curve
+- [ ] Adapters: MCP proxy (agent-agnostic), Cursor/VS Code
 
 ---
 
-## 6. Источники
+## 6. Sources
 
-**Инциденты**
-- Replit / SaaStr, июль 2025 — https://www.businessinsider.com/replit-ceo-apologizes-ai-coding-tool-delete-company-database-2025-7
+**Incidents**
+- Replit / SaaStr, July 2025 — https://www.businessinsider.com/replit-ceo-apologizes-ai-coding-tool-delete-company-database-2025-7
 - Amazon Q Developer, CVE-2025-8217 — https://github.com/aws/aws-toolkit-vscode/security/advisories/GHSA-7g7f-ff96-5gcw
 - Gemini CLI, issue #4586 — https://github.com/google-gemini/gemini-cli/issues/4586
 
-**Продукты**
+**Products**
 - Claude Code permission modes / hooks — https://code.claude.com/docs/en/permission-modes, https://code.claude.com/docs/en/hooks
 - OpenAI Codex CLI approval modes — https://github.com/openai/codex
 - Cursor agent security — https://cursor.com/docs/agent/security
@@ -147,7 +147,7 @@ Manual (спрашивать всё) → Accept-edits → LLM-классифик
 - HumanLayer — https://github.com/humanlayer/humanlayer
 - AgentsGate — https://github.com/agentsgate/agentsgate
 
-**Исследования**
+**Research**
 - Bainbridge, *Ironies of Automation*, 1983 — https://en.wikipedia.org/wiki/Ironies_of_Automation
 - Parasuraman & Riley, *Humans and Automation: Use, Misuse, Disuse, Abuse*, 1997 — https://en.wikipedia.org/wiki/Automation_bias
 - Endsley & Kiris, *Out-of-the-loop performance problem*, 1995 — https://en.wikipedia.org/wiki/Out-of-the-loop_performance_problem
@@ -163,7 +163,7 @@ Manual (спрашивать всё) → Accept-edits → LLM-классифик
 - Zhao et al., *AgentGUI*, 2026 — https://arxiv.org/abs/2607.26300
 - Chou et al., *Vibe-GUIDE*, 2026 — https://arxiv.org/abs/2609.23859
 
-**UX-паттерны**
-- Airbus ECAM (тиры оповещений) — https://en.wikipedia.org/wiki/Electronic_centralised_aircraft_monitor
+**UX patterns**
+- Airbus ECAM (alert tiers) — https://en.wikipedia.org/wiki/Electronic_centralised_aircraft_monitor
 - Management by exception — https://en.wikipedia.org/wiki/Management_by_exception
-- RSVP / speed reading (отвергнут: убирает возможность перечитать и сравнить) — https://en.wikipedia.org/wiki/Rapid_serial_visual_presentation
+- RSVP / speed reading (rejected: removes the ability to re-read and compare) — https://en.wikipedia.org/wiki/Rapid_serial_visual_presentation
